@@ -1,6 +1,9 @@
 import io.restassured.RestAssured;
+import io.restassured.filter.log.RequestLoggingFilter;
+import io.restassured.filter.log.ResponseLoggingFilter;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
@@ -10,6 +13,12 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class PostmanEcho {
     private static final String BASE_URL = "https://postman-echo.com";
+
+    @BeforeAll
+    static void setup() {
+        RestAssured.baseURI = BASE_URL;
+        RestAssured.filters(new RequestLoggingFilter(), new ResponseLoggingFilter());
+    }
 
     @Test
     void testGet() {
@@ -35,6 +44,22 @@ public class PostmanEcho {
         assertEquals(200, response.getStatusCode());
         assertEquals("John", response.jsonPath().getString("json.name"));
         assertEquals("30", response.jsonPath().getString("json.age"));
+    }
+
+    @Test
+    void testPostWithTextPlain() {
+        String textBody = "This is a plain message for testing!";
+
+        Response response = RestAssured
+                .given()
+                .contentType(ContentType.TEXT)
+                .body(textBody)
+                .when()
+                .post("/post");
+
+        assertEquals(200, response.getStatusCode());
+        assertEquals(textBody, response.jsonPath().getString("data"));
+        assertEquals("https://postman-echo.com/post", response.jsonPath().getString("url"));
     }
 
     @Test
